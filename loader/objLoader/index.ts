@@ -60,12 +60,12 @@ class ObjLoader {
       (modelObj: THREE.Group) => {
         //加载完成
         this.model = modelObj;
-        const { autoShadow = false, name = "" } = this.config;
+        const { castShadow = this.base.autoShadow, name = "" } = this.config;
         this.model.name = name;
         this.model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
-            child.castShadow = autoShadow; // 设置投射阴影
-            child.receiveShadow = autoShadow; // 设置接收阴影
+            child.castShadow = castShadow; // 设置投射阴影
+            child.receiveShadow = castShadow; // 设置接收阴影
           }
         });
         this.base.scene.add(this.model);

@@ -9,6 +9,7 @@ class Base {
   renderer: THREE.WebGLRenderer;
   clock: THREE.Clock;
   controller: OrbitControls | null; // 控制器
+  autoShadow: boolean; //自动阴影
   resize: boolean; // 是否自动调整大小
   animateFuncObj: Map<string, () => void> = new Map(); // 存储动画运行函数的对象
   animationFrameId: number | null; // 用于存储requestAnimationFrame的ID
@@ -16,7 +17,7 @@ class Base {
   constructor(config?: BaseConfig) {
     const {
       container = "#Space",
-      enableShadow = false,
+      autoShadow = false,
       resize = true,
     } = config || {};
     this.container =
@@ -27,6 +28,7 @@ class Base {
     this.scene = new THREE.Scene();
     this.resize = resize;
     this.controller = null; // 初始化控制器为null
+    this.autoShadow = autoShadow;
 
     //创建默认相机
     this.camera = new THREE.PerspectiveCamera(
@@ -51,7 +53,7 @@ class Base {
     // 设置设备像素比(提高在高DPI设备上的渲染质量)
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    if (enableShadow) {
+    if (autoShadow) {
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 使用软阴影
     }

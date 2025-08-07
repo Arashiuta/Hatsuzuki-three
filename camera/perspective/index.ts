@@ -15,10 +15,16 @@ class PerspectiveCamera {
       near = 0.1,
       far = 200,
       position = [50, 50, 50],
+      helper = false,
       autoSet = true,
     } = config;
     this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     this.camera.position.set(...position);
+
+    if (helper) {
+      const helper = new THREE.CameraHelper(this.camera);
+      this.base.scene.add(helper);
+    }
     if (autoSet) {
       this.setCamera();
     }
