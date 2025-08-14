@@ -4,6 +4,7 @@ export * from "./control";
 export * from "./geometry";
 export * from "./light";
 export * from "./loader";
-export * from "./material";
+// export * from "./material"; // no export now
 export * from "./object";
-export * from "./utils";
+export * from "./tools";
+export * from "./renderer";

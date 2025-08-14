@@ -86,7 +86,7 @@ class Base {
     // 更新渲染器
     this.renderer.render(this.scene, this.camera);
   };
-  //窗口变化
+  //监听窗口变化
   onWindowResize() {
     const newWidth = this.container.clientWidth;
     const newHeight = this.container.clientHeight;
@@ -98,10 +98,10 @@ class Base {
   }
 
   addToScene(object: THREE.Object3D, name?: string) {
-    this.scene.add(object);
     if (name) {
       object.name = name; // 设置对象名称
     }
+    this.scene.add(object);
   }
 
   setSceneOption(config: SceneOption) {
@@ -118,6 +118,31 @@ class Base {
   // 移除指定的动画函数
   removeAnimateFunc(name: string) {
     this.animateFuncObj.delete(name);
+  }
+
+  disposeObject(model: THREE.Object3D) {
+    if (!model) return;
+    if (model.parent) {
+      model.parent.remove(model);
+    }
+    model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (child.geometry) {
+          child.geometry.dispose();
+        }
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((material) => {
+              material.map?.dispose();
+              material.dispose();
+            });
+          } else {
+            child.material.map?.dispose();
+            child.material.dispose();
+          }
+        }
+      }
+    });
   }
 
   //清空资源

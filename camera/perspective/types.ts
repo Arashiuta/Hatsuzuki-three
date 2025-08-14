@@ -1,4 +1,4 @@
-export declare interface PerspectiveCameraConfig {
+export interface PerspectiveCameraConfig {
   fov?: number; // 视野角度
   aspect?: number; // 宽高比
   near?: number; // 最近可见距离

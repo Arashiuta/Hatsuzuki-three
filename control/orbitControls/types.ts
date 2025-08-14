@@ -1,4 +1,4 @@
-export declare interface OrbitControlsConfig {
+export interface OrbitControlsConfig {
   autoRotate?: boolean; // 是否自动旋转
   autoRotateSpeed?: number; // 自动旋转速度
   enableDamping?: boolean; // 是否启用阻尼

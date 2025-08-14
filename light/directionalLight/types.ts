@@ -1,5 +1,5 @@
 import * as THREE from "three";
-export declare interface DirectionalLightConfig {
+export interface DirectionalLightConfig {
   color?: string | THREE.Color;
   intensity?: number;
   castShadow?: boolean;

@@ -1,4 +1,5 @@
-export declare interface BufferGeometryConfig {
+import * as THREE from "three";
+export interface BufferGeometryConfig {
   vertices: number[]; // 顶点数组
   material?: THREE.Material; // 材质
   position?: [number, number, number]; // 初始位置
