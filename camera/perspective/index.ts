@@ -26,11 +26,11 @@ class PerspectiveCamera {
       this.base.scene.add(helper);
     }
     if (autoSet) {
-      this.setCamera();
+      this.setCameraToScene();
     }
   }
 
-  setCamera() {
+  setCameraToScene() {
     this.base.camera = this.camera; // 设置Base的相机为PerspectiveCamera
   }
 
@@ -38,7 +38,7 @@ class PerspectiveCamera {
     return this.camera; // 返回当前的相机实例
   }
 
-  setOptions(options: Partial<PerspectiveCameraConfig>) {
+  setOptions(options: PerspectiveCameraConfig) {
     const { fov, aspect, near, far, position } = options;
     if (fov !== undefined) this.camera.fov = fov;
     if (aspect !== undefined) this.camera.aspect = aspect;

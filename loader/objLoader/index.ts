@@ -3,14 +3,16 @@ import type { Base } from "../../base";
 import { MTLLoader } from "three/addons/loaders/MTLLoader.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import type { ObjLoaderConfig } from "./types";
+import { Mitt } from "../../tools/mitt";
 
-class ObjLoader {
+class ObjLoader extends Mitt {
   base: Base;
   private mtlLoader: MTLLoader;
   private objLoader: OBJLoader;
   progress: { title: string; value: string };
 
   constructor(base: Base) {
+    super();
     this.base = base;
     this.mtlLoader = new MTLLoader();
     this.objLoader = new OBJLoader();
@@ -18,6 +20,7 @@ class ObjLoader {
   }
 
   load(config: ObjLoaderConfig) {
+    this.progress = { title: "", value: "0%" };
     const { mtlPath } = config;
     if (mtlPath) {
       return this.mtlLoad(config);
@@ -33,16 +36,18 @@ class ObjLoader {
         mtlPath!,
         (mtlObj: MTLLoader.MaterialCreator) => {
           //加载完成
-          this.progress = { title: "材质加载完成", value: "100%" };
           this.objLoader.setMaterials(mtlObj);
+          this.progress = { title: "材质加载完成", value: "100%" };
+          this.emit("progress", this.progress);
           this.objLoad(config).then(resolve).catch(reject);
         },
         (xhr) => {
           //加载进度回调
           this.progress = {
             title: "正在加载材质",
-            value: `${(xhr.loaded / xhr.total) * 100}%`,
+            value: `${((xhr.loaded / xhr.total) * 100).toFixed(2)}%`,
           };
+          this.emit("progress", this.progress);
         },
         (err) => {
           console.log("加载材质出错", err);
@@ -67,14 +72,20 @@ class ObjLoader {
             }
           });
           this.base.addToScene(model, name);
+          this.progress = {
+            title: "模型加载完成",
+            value: `100%`,
+          };
+          this.emit("progress", this.progress);
           resolve(model);
         },
         (xhr) => {
           //加载进度
           this.progress = {
             title: "正在加载模型",
-            value: `${(xhr.loaded / xhr.total) * 100}%`,
+            value: `${((xhr.loaded / xhr.total) * 100).toFixed(2)}%`,
           };
+          this.emit("progress", this.progress);
         },
         (err) => {
           //失败
