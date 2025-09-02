@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import type { BaseConfig, SceneOption } from "./types";
 
 class Base {
@@ -7,12 +8,14 @@ class Base {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   renderer: THREE.WebGLRenderer;
+  composer: EffectComposer;
   clock: THREE.Clock;
-  controller: OrbitControls | null; // 控制器
   autoShadow: boolean; //自动阴影
   resize: boolean; // 是否自动调整大小
-  animateFuncObj: Map<string, () => void> = new Map(); // 存储动画运行函数的对象
   animationFrameId: number | null; // 用于存储requestAnimationFrame的ID
+
+  animateFuncMap: Map<string, () => void> = new Map(); // 存储动画运行函数的对象
+  disposeFuncMap: Map<string, () => void> = new Map(); //用于存储卸载函数的对象
 
   constructor(config?: BaseConfig) {
     const {
@@ -27,7 +30,6 @@ class Base {
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
     this.resize = resize;
-    this.controller = null; // 初始化控制器为null
     this.autoShadow = autoShadow;
 
     //创建默认相机
@@ -58,6 +60,10 @@ class Base {
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 使用软阴影
     }
 
+    // --- 默认使用 EffectComposer ---
+    this.composer = new EffectComposer(this.renderer);
+    this.updateComposerRenderPass();
+
     this.animationFrameId = null; // 初始化动画帧ID为null
 
     //启动渲染
@@ -79,13 +85,30 @@ class Base {
   //动画渲染
   animate = () => {
     this.animationFrameId = requestAnimationFrame(this.animate);
+
     // 执行额外函数
-    for (const [key, func] of this.animateFuncObj) {
+    for (const [key, func] of this.animateFuncMap) {
       func();
     }
     // 更新渲染器
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
+    // this.renderer.render(this.scene, this.camera);
   };
+
+  //添加新的通道到composer
+  addComposerPass(pass: any) {
+    this.composer.addPass(pass);
+  }
+
+  //在更新renderer或者相机后要更新renderPass重新注入新的相机
+  updateComposerRenderPass() {
+    // RenderPass 必须作为第一个通道，它负责将场景渲染到内部缓冲区
+    const oldRendererPass = this.composer.passes[0];
+    this.composer.removePass(oldRendererPass);
+    const newRendererPass = new RenderPass(this.scene, this.camera);
+    this.composer.insertPass(newRendererPass, 0);
+  }
+
   //监听窗口变化
   onWindowResize() {
     const newWidth = this.container.clientWidth;
@@ -95,8 +118,10 @@ class Base {
     }
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(newWidth, newHeight);
+    this.composer.setSize(newWidth, newHeight);
   }
 
+  //添加Object3D到场景
   addToScene(object: THREE.Object3D, name?: string) {
     if (name) {
       object.name = name; // 设置对象名称
@@ -104,6 +129,7 @@ class Base {
     this.scene.add(object);
   }
 
+  //修改场景设置
   setSceneOption(config: SceneOption) {
     const { background } = config;
 
@@ -113,13 +139,23 @@ class Base {
 
   // 添加要循环执行的函数
   addAnimateFunc(name: string, func: () => void) {
-    this.animateFuncObj.set(name, func);
+    this.animateFuncMap.set(name, func);
   }
   // 移除指定的动画函数
   removeAnimateFunc(name: string) {
-    this.animateFuncObj.delete(name);
+    this.animateFuncMap.delete(name);
   }
 
+  //添加卸载函数
+  addDisposeFunc(name: string, func: () => void) {
+    this.disposeFuncMap.set(name, func);
+  }
+  //移除卸载函数
+  removeDisposeFunc(name: string) {
+    this.disposeFuncMap.delete(name);
+  }
+
+  //卸载单个Object3D
   disposeObject(model: THREE.Object3D) {
     if (!model) return;
     if (model.parent) {
@@ -156,11 +192,14 @@ class Base {
     if (this.renderer) {
       this.renderer.dispose(); // 释放渲染器资源
     }
-    if (this.controller) {
-      this.controller.dispose(); // 释放控制器资源
-    }
+
     if (this.container && this.renderer.domElement.parentNode) {
       this.container.removeChild(this.renderer.domElement); // 从容器中移除渲染器
+    }
+
+    //调用注册的清除函数
+    for (const [key, value] of this.disposeFuncMap) {
+      value();
     }
     // 释放场景中的所有对象
     this.scene.traverse((object) => {
@@ -187,8 +226,7 @@ class Base {
     this.camera = null as any;
     this.renderer = null as any;
     this.clock = null as any;
-    this.controller = null; // 清空控制器引用
-    this.animateFuncObj.clear(); // 清空动画函数对象
+    this.animateFuncMap.clear(); // 清空动画函数对象
     this.animationFrameId = null; // 清空动画帧ID
     this.resize = false; // 清空resize状态
   }

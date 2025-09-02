@@ -3,7 +3,7 @@ import type { Base } from "../../base";
 import type { OrbitControlsConfig } from "./types";
 
 class OrbitControls {
-  controls: OrbitControlsThree;
+  controls: OrbitControlsThree | null;
   base: Base;
   constructor(base: Base, config?: OrbitControlsConfig) {
     this.base = base;
@@ -43,19 +43,25 @@ class OrbitControls {
     this.controls.minAzimuthAngle = minAzimuthAngle;
     this.controls.enablePan = enablePan;
 
-    base.animateFuncObj.set("orbitControls", () => {
-      this.controls.update();
+    base.addAnimateFunc("orbitControls", () => {
+      this.controls?.update();
     });
+
+    base.addDisposeFunc("orbitControls", () => {
+      this.dispose();
+    });
+
+    this.saveState();
   }
 
   saveState() {
     // 保存当前控制器状态,可以使用reset()方法重置到这个状态
-    this.controls.saveState();
+    this.controls?.saveState();
   }
 
   reset() {
     // 重置控制器到初始状态
-    this.controls.reset();
+    this.controls?.reset();
   }
 
   setOptions(options: OrbitControlsConfig) {
@@ -75,7 +81,7 @@ class OrbitControls {
       enablePan,
       target, // 注意：这里需要单独处理 target
     } = options;
-
+    if (!this.controls) return;
     if (autoRotate !== undefined) this.controls.autoRotate = autoRotate;
     if (autoRotateSpeed !== undefined)
       this.controls.autoRotateSpeed = autoRotateSpeed;
@@ -99,6 +105,11 @@ class OrbitControls {
     if (target !== undefined) {
       this.controls.target.set(...target);
     }
+  }
+
+  dispose() {
+    this.controls?.dispose();
+    this.controls = null;
   }
 }
 

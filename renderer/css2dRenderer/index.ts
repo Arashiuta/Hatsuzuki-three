@@ -8,23 +8,24 @@ import type { CSS2DObiectConfig } from "./types";
 class CSS2DRenderer {
   base: Base;
   loadMap: Map<string, CSS2DObject>;
+  renderer: CSS2DRendererThree;
 
   constructor(base: Base, config?: { pointerEvents?: string }) {
     this.base = base;
     this.loadMap = new Map();
     const { pointerEvents = "auto" } = config || {}; // 默认允许指针事件,'none'为不允许
-    const labelRenderer = new CSS2DRendererThree();
-    labelRenderer.setSize(
+    this.renderer = new CSS2DRendererThree();
+    this.renderer.setSize(
       base.container.clientWidth,
       base.container.clientHeight
     );
-    labelRenderer.domElement.style.position = "absolute";
-    labelRenderer.domElement.style.top = "0px";
-    labelRenderer.domElement.style.pointerEvents = pointerEvents;
-    document.body.appendChild(labelRenderer.domElement);
+    this.renderer.domElement.style.position = "absolute";
+    this.renderer.domElement.style.top = "0px";
+    this.renderer.domElement.style.pointerEvents = pointerEvents;
+    document.body.appendChild(this.renderer.domElement);
 
     this.base.addAnimateFunc("CSS2DRenderer", () => {
-      labelRenderer.render(base.scene, base.camera);
+      this.renderer.render(base.scene, base.camera);
     });
   }
 
@@ -49,6 +50,12 @@ class CSS2DRenderer {
       label.parent?.remove(label);
       this.loadMap.delete(name);
     }
+  }
+
+  visible(order: boolean) {
+    this.loadMap.forEach((item) => {
+      item.visible = order;
+    });
   }
 
   dispose() {
