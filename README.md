@@ -7,8 +7,9 @@
 ---
 
 # 基础使用
-将本项目放到你的项目目录下，如`src/tools/hatsizuki-three/index`
-确保安装`three`和`mitt`两个包
+直接将本项目放到你的项目目录下引用使用，如`src/tools/hatsizuki-three/index`
+根据需求修改或者扩展此工具
+确保安装`three`和`mitt`
 ```
 npm i three mitt
 ```
