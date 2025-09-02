@@ -10,8 +10,7 @@
 将本项目放到你的项目目录下，如`src/tools/hatsizuki-three/index`
 确保安装`three`和`mitt`两个包
 ```
-npm i three
-npm i mitt
+npm i three mitt
 ```
 ## 示例
 完整代码
