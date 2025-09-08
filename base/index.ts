@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import type { BaseConfig, SceneOption } from "./types";
+import { OutputPass, SMAAPass } from "three/examples/jsm/Addons.js";
+import { FXAAPass } from "three/examples/jsm/postprocessing/FXAAPass.js";
 
 class Base {
   container: HTMLElement;
@@ -16,12 +18,14 @@ class Base {
 
   animateFuncMap: Map<string, () => void> = new Map(); // 存储动画运行函数的对象
   disposeFuncMap: Map<string, () => void> = new Map(); //用于存储卸载函数的对象
+  composerPassMap: Map<string, any> = new Map(); //用于存储后处理通道的对象
 
   constructor(config?: BaseConfig) {
     const {
       container = "#Space",
       autoShadow = false,
       resize = true,
+      antialias = "SMAA",
     } = config || {};
     this.container =
       container instanceof HTMLElement
@@ -44,7 +48,7 @@ class Base {
 
     // 创建WebGL渲染器
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true, // 启用抗锯齿
+      antialias: antialias === "MSAA" ? true : false, // 启用抗锯齿
       alpha: true, // 启用透明背景
     });
     // 设置渲染尺寸为容器大小
@@ -63,6 +67,15 @@ class Base {
     // --- 默认使用 EffectComposer ---
     this.composer = new EffectComposer(this.renderer);
     this.updateComposerRenderPass();
+    // 添加抗锯齿
+    if (antialias === "SMAA") {
+      this.composer.addPass(new SMAAPass());
+    }
+    if (antialias === "FXAA") {
+      this.composer.addPass(new FXAAPass());
+    }
+    // 在后处理通道链的最后添加一个 OutputPass
+    this.composer.addPass(new OutputPass());
 
     this.animationFrameId = null; // 初始化动画帧ID为null
 
@@ -96,11 +109,34 @@ class Base {
   };
 
   //添加新的通道到composer
-  addComposerPass(pass: any) {
-    this.composer.addPass(pass);
+  addComposerPass(name: string, pass: any, index?: number): boolean {
+    const passLength = this.composer.passes.length;
+    if (index && (index === 0 || index >= passLength - 1)) {
+      console.warn(
+        `错误的插入位置,处理通道插入位置应该在1到 ${passLength - 2}`
+      );
+      return false;
+    }
+    if (index) {
+      this.composer.insertPass(pass, index);
+      return true;
+    }
+    this.composer.insertPass(pass, passLength - 2);
+    this.composerPassMap.set(name, pass);
+    return true;
   }
 
-  //在更新renderer或者相机后要更新renderPass重新注入新的相机
+  removeComposerPass(name: string): boolean {
+    if (!this.composerPassMap.has(name)) {
+      console.warn("你正在试图移除一个不存在的处理通道");
+      return false;
+    }
+    const pass = this.composerPassMap.get(name);
+    this.composer.removePass(pass);
+    return true;
+  }
+
+  //在更新renderer或者相机后要手动更新renderPass重新注入新的相机
   updateComposerRenderPass() {
     // RenderPass 必须作为第一个通道，它负责将场景渲染到内部缓冲区
     const oldRendererPass = this.composer.passes[0];
@@ -146,7 +182,7 @@ class Base {
     this.animateFuncMap.delete(name);
   }
 
-  //添加卸载函数
+  //添加插件卸载函数
   addDisposeFunc(name: string, func: () => void) {
     this.disposeFuncMap.set(name, func);
   }
