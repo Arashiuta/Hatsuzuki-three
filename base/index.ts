@@ -4,6 +4,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import type { BaseConfig, SceneOption } from "./types";
 import { OutputPass, SMAAPass } from "three/examples/jsm/Addons.js";
 import { FXAAPass } from "three/examples/jsm/postprocessing/FXAAPass.js";
+import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 
 class Base {
   container: HTMLElement;
@@ -108,7 +109,7 @@ class Base {
     // this.renderer.render(this.scene, this.camera);
   };
 
-  //添加新的通道到composer
+  //添加新的通道到composer  [render,smaa,com] leng 3
   addComposerPass(name: string, pass: any, index?: number): boolean {
     const passLength = this.composer.passes.length;
     if (index && (index === 0 || index >= passLength - 1)) {
@@ -157,14 +158,6 @@ class Base {
     this.composer.setSize(newWidth, newHeight);
   }
 
-  //添加Object3D到场景
-  addToScene(object: THREE.Object3D, name?: string) {
-    if (name) {
-      object.name = name; // 设置对象名称
-    }
-    this.scene.add(object);
-  }
-
   //修改场景设置
   setSceneOption(config: SceneOption) {
     const { background } = config;
@@ -198,6 +191,13 @@ class Base {
       model.parent.remove(model);
     }
     model.traverse((child) => {
+      // 检查是否是 CSS2DObject
+      if (child instanceof CSS2DObject) {
+        if (child.element && child.element.parentNode) {
+          child.element.parentNode.removeChild(child.element);
+        }
+      }
+      // 检查是否是网格（Mesh）
       if (child instanceof THREE.Mesh) {
         if (child.geometry) {
           child.geometry.dispose();

@@ -10,7 +10,10 @@ class BufferGeometry {
     this.base = base;
     const {
       vertices,
-      material,
+      material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide,
+      }),
       position = [0, 0, 0],
       rotate,
       rotation,
@@ -22,10 +25,7 @@ class BufferGeometry {
       "position",
       new THREE.Float32BufferAttribute(vertices, 3)
     );
-    this.mesh = new THREE.Mesh(
-      geometry,
-      material || new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-    );
+    this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.set(...position);
     if (rotate) this.mesh.rotation.set(...rotate);
     if (rotation) this.mesh.rotation.set(...rotation);
@@ -35,7 +35,7 @@ class BufferGeometry {
     base.scene.add(this.mesh); // 将网格添加到场景中
   }
 
-  getMesh() {
+  getObject() {
     return this.mesh;
   }
 

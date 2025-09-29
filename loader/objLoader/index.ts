@@ -29,7 +29,7 @@ class ObjLoader extends Mitt {
     }
   }
 
-  mtlLoad(config: ObjLoaderConfig) {
+  private mtlLoad(config: ObjLoaderConfig) {
     return new Promise<THREE.Mesh | THREE.Group>((resolve, reject) => {
       const { mtlPath } = config;
       this.mtlLoader.load(
@@ -56,7 +56,7 @@ class ObjLoader extends Mitt {
     });
   }
 
-  objLoad(config: ObjLoaderConfig) {
+  private objLoad(config: ObjLoaderConfig) {
     return new Promise<THREE.Mesh | THREE.Group>((resolve, reject) => {
       const { objPath, shadow = this.base.autoShadow, name = "" } = config;
       this.objLoader.load(
@@ -71,7 +71,8 @@ class ObjLoader extends Mitt {
               child.receiveShadow = shadow; // 设置接收阴影
             }
           });
-          this.base.addToScene(model, name);
+          model.name = name;
+          this.base.scene.add(model);
           this.progress = {
             title: "模型加载完成",
             value: `100%`,
