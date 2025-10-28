@@ -1,41 +1,46 @@
 import type { Base } from "../../base";
 import {
-  CSS2DRenderer as CSS2DRendererThree,
-  CSS2DObject,
-} from "three/addons/renderers/CSS2DRenderer.js";
-import type { CSS2DObjectConfig } from "./types";
+  CSS3DRenderer as CSS3DRendererThree,
+  CSS3DObject,
+} from "three/addons/renderers/CSS3DRenderer.js"; // 注意：导入路径需要根据实际情况调整
+import type { CSS3DObjectConfig } from "./types"; // 复用你的配置接口
 
-class CSS2DRenderer {
+class CSS3DRenderer {
   base: Base;
-  loadMap: Map<string, CSS2DObject>;
-  renderer: CSS2DRendererThree;
+  loadMap: Map<string, CSS3DObject>;
+  renderer: CSS3DRendererThree;
 
   constructor(base: Base, config?: { pointerEvents?: string }) {
     this.base = base;
     this.loadMap = new Map();
-    const { pointerEvents = "auto" } = config || {}; // 默认允许指针事件,'none'为不允许
-    this.renderer = new CSS2DRendererThree();
+    const { pointerEvents = "none" } = config || {};
+
+    this.renderer = new CSS3DRendererThree();
+
+    // 设置渲染器尺寸
     this.renderer.setSize(
       base.container.clientWidth,
       base.container.clientHeight
     );
+
     this.renderer.domElement.style.position = "absolute";
     this.renderer.domElement.style.top = "0px";
     this.renderer.domElement.style.pointerEvents = pointerEvents;
-    document.body.appendChild(this.renderer.domElement);
 
-    this.base.addAnimateFunc("CSS2DRenderer", () => {
+    this.base.container.appendChild(this.renderer.domElement);
+
+    this.base.addAnimateFunc("CSS3DRenderer", () => {
       this.renderer.render(base.scene, base.camera);
     });
   }
 
-  createCSS2DObject(
+  createCSS3DObject(
     element: HTMLElement,
-    config: CSS2DObjectConfig
-  ): CSS2DObject {
+    config: CSS3DObjectConfig // 复用你现有的配置接口
+  ): CSS3DObject {
     const { place, position, name, visible = true } = config;
     if (!place) throw new Error("place is required");
-    const label = new CSS2DObject(element);
+    const label = new CSS3DObject(element);
     label.position.set(...position);
     label.visible = visible;
     if (name) label.name = name;
@@ -44,7 +49,7 @@ class CSS2DRenderer {
     return label;
   }
 
-  removeCSS2DObject(name: string) {
+  removeCSS3DObject(name: string): void {
     const label = this.loadMap.get(name);
     if (label) {
       label.parent?.remove(label);
@@ -52,21 +57,21 @@ class CSS2DRenderer {
     }
   }
 
-  visible(order: boolean) {
+  visible(order: boolean): void {
     this.loadMap.forEach((item) => {
       item.visible = order;
     });
   }
 
-  dispose() {
+  dispose(): void {
     this.loadMap.forEach((item) => {
       item.parent?.remove(item);
     });
-    this.base.removeAnimateFunc("CSS2DRenderer");
+    this.base.removeAnimateFunc("CSS3DRenderer");
     if (this.renderer.domElement.parentNode) {
       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
     }
   }
 }
 
-export { CSS2DRenderer };
+export { CSS3DRenderer };
